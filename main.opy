@@ -2,6 +2,7 @@ globalvar CheckpointPositions
 globalvar Prime
 globalvar TimeRemaining
 globalvar Radius_VA_
+globalvar MapGeneratorTemp
 
 playervar PlayerStates
 
@@ -25,20 +26,39 @@ def setAbilities():
     eventPlayer.setAbility2Enabled(true if Prime[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]] % Primes.DISABLE_SLAM else false)
     eventPlayer.setSecondaryFireEnabled(true if Prime[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]] % Primes.DISABLE_PUNCH else false)
 
-rule "Initialize Map Data":
+def generateMap():
+    for MapGeneratorTemp in range(0, len(CheckpointPositions)):
+        createEffect(
+            [
+                p for p in getAllPlayers() if
+                p.PlayerStates[StateIdx.CHECKPOINT_COUNTER] == CheckpointPositions.index(CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]]) or
+                p.PlayerStates[StateIdx.CHECKPOINT_COUNTER - 1] == CheckpointPositions.index(CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER - 1]])    
+            ], 
+            Effect.RING, Color.GREEN, 
+            CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]], 
+            Radius_VA_[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]].x, 
+            EffectReeval.VISIBILITY
+        )
+
+
+
+rule "Map Data":
+    CheckpointPositions = [vect(2.670, 6.500, -71.532), vect(0.239, 1.371, -74.092), vect(3.482, 8.510, -87.578)]
+    Radius_VA_ = [vect(2, 0, 0), vect(2, 0, 0), vect(2, 0, 0)]
+    Prime = [2, 2, 2]
+
+rule "Initialize Map":
     disableAnnouncer()
     disableGamemodeCompletion()
     disableMusic()
     disableScoring()
-
-    CheckpointPositions = [vect(2.670, 6.500, -71.532), vect(0.239, 1.371, -74.092)]
-    Radius_VA_ = [vect(2, vect(1, 1, 1), false), vect(2, vect(1, 1, 1), false)]
-    Prime = [2, 2]
+    generateMap()
+    
 
 rule "Player Joins":
     @Event playerJoined
     # Init player states
-    eventPlayer.PlayerStates = [false, false, false, false, false]
+    eventPlayer.PlayerStates = [false, false, false, 1, false]
 
     eventPlayer.disableMessages()
     eventPlayer.disableRespawn()
@@ -53,13 +73,13 @@ rule "Player Joins":
     setAbilities()
     eventPlayer.PlayerStates[StateIdx.INITIALIZED] = true
 
-rule "Display Checkpoint":
-    @Event eachPlayer
-    @Condition eventPlayer.PlayerStates[StateIdx.INITIALIZED]
+# rule "Display Checkpoint":
+#     @Event eachPlayer
+#     @Condition eventPlayer.PlayerStates[StateIdx.INITIALIZED]
 
-    eventPlayer.communicate(Comms.ACKNOWLEDGE)
-    createEffect(eventPlayer, Effect.RING, Color.GREEN, CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]], 2, EffectReeval.VISIBILITY)
-    createEffect(eventPlayer, Effect.RING, Color.GREEN, CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER] + 1], 2, EffectReeval.VISIBILITY)
+#     eventPlayer.communicate(Comms.ACKNOWLEDGE)
+#     createEffect(eventPlayer, Effect.RING, Color.GREEN, CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER]], 2, EffectReeval.VISIBILITY)
+#     createEffect(eventPlayer, Effect.RING, Color.GREEN, CheckpointPositions[eventPlayer.PlayerStates[StateIdx.CHECKPOINT_COUNTER] + 1], 2, EffectReeval.VISIBILITY)
     
 # rule "Complete Checkpoint":
 #     @Event eachPlayer
